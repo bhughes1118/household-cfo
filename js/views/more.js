@@ -123,7 +123,8 @@ export function sync(root) {
         ${st.message ? `<p class="muted small">${esc(st.message)}</p>` : ''}
         ${st.state === 'needs-auth' || st.state === 'error' ? '<button class="btn block" data-act="connect">Sign in to Google again</button>' : ''}
         <button class="btn block" data-act="sync">Sync now</button>
-        <button class="btn block ghost" data-act="disconnect">Turn off sync on this device</button>
+        <button class="btn block ghost" data-act="disconnect">Sign out of this device</button>
+        <p class="muted small">Signing out removes the copy on this device. Your data stays in Google Drive.</p>
       ` : st.clientId ? `
         ${st.message ? `<p class="neg small">${esc(st.message)}</p>` : ''}
         <button class="btn block" data-act="connect">Connect Google Drive</button>
@@ -141,7 +142,11 @@ export function sync(root) {
   const on = (act, fn) => { const el = root.querySelector(`[data-act="${act}"]`); if (el) el.onclick = fn; };
   on('connect', connect);
   on('sync', () => syncNow({ allowRedirect: true }));
-  on('disconnect', () => { disconnect(); toast('Sync turned off on this device'); });
+  on('disconnect', (e) => {
+    const b = e.currentTarget;
+    if (b.dataset.armed) disconnect();
+    else { b.dataset.armed = '1'; b.textContent = 'Tap again to sign out'; }
+  });
   on('save-id', () => {
     const v = root.querySelector('#client-id').value.trim();
     if (!/\.apps\.googleusercontent\.com$/.test(v)) { toast('That does not look like a Google client ID'); return; }

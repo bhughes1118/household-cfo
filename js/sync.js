@@ -83,10 +83,12 @@ function startAuth({ silent = false } = {}) {
 
 export function connect() { startAuth(); }
 
+// Signing out also removes this device's copy of the data (it stays safe in Drive).
 export function disconnect() {
-  [LS.token, LS.connected, LS.fileId, LS.email, LS.lastSync].forEach(ls.del);
-  status.lastSync = 0;
-  setStatus('off');
+  const token = readToken();
+  if (token) fetch(`https://oauth2.googleapis.com/revoke?token=${token}`, { method: 'POST' }).catch(() => {});
+  [LS.token, LS.connected, LS.fileId, LS.email, LS.lastSync, 'hcfo:state'].forEach(ls.del);
+  location.replace(location.pathname);
 }
 
 // Called once at startup, before the router reads the hash.

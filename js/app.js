@@ -2,7 +2,7 @@
 // service worker registration. Each screen lives in js/views/.
 
 import { subscribe } from './store.js';
-import { initSync, onStatus, getStatus } from './sync.js';
+import { initSync, onStatus, getStatus, isConnected, connect } from './sync.js';
 import { monthKey } from './calc.js';
 import * as household from './views/household.js';
 import * as honeymoon from './views/honeymoon.js';
@@ -36,7 +36,27 @@ function currentPath() {
   return routes[p] ? p : '/';
 }
 
+// Lock screen: nothing is shown until this device has signed in with Google.
+function renderLock() {
+  const st = getStatus();
+  document.body.classList.add('locked');
+  document.getElementById('topbar-title').textContent = 'Household CFO';
+  document.getElementById('topbar-actions').innerHTML = '';
+  root.innerHTML = `
+    <section class="lock">
+      <img src="icons/icon-192.png" alt="" width="84" height="84">
+      <h1>Household CFO</h1>
+      <p class="muted">Sign in with your Google account to open your budget and honeymoon plans.</p>
+      ${st.message ? `<p class="neg small">${st.message}</p>` : ''}
+      <button class="btn block google" data-act="signin">Sign in with Google</button>
+      <p class="muted small">Your data is stored in your own Google Drive.</p>
+    </section>`;
+  root.querySelector('[data-act="signin"]').onclick = connect;
+}
+
 export function render() {
+  if (!isConnected()) return renderLock();
+  document.body.classList.remove('locked');
   const path = currentPath();
   const route = routes[path];
   document.getElementById('topbar-title').textContent = route.title;
