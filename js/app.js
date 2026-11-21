@@ -2,6 +2,7 @@
 // service worker registration. Each screen lives in js/views/.
 
 import { subscribe } from './store.js';
+import { initSync, onStatus, getStatus } from './sync.js';
 import { monthKey } from './calc.js';
 import * as household from './views/household.js';
 import * as honeymoon from './views/honeymoon.js';
@@ -24,6 +25,7 @@ const routes = {
   '/honeymoon/settings': { view: honeymoon.tripSettings, tab: 'honeymoon', title: 'Trip details' },
   '/more': { view: more.menu, tab: 'more', title: 'More' },
   '/data': { view: more.data, tab: 'more', title: 'Backup & data' },
+  '/sync': { view: more.sync, tab: 'more', title: 'Cloud sync' },
 };
 
 const root = document.getElementById('view');
@@ -40,7 +42,7 @@ export function render() {
   document.getElementById('topbar-title').textContent = route.title;
   document.title = path === '/' ? 'Household CFO' : `${route.title} · Household CFO`;
   document.querySelectorAll('.tabbar a').forEach((a) => a.classList.toggle('active', a.dataset.tab === route.tab));
-  document.getElementById('topbar-actions').innerHTML = '';
+  renderSyncBadge();
   const scroll = path === lastPath ? window.scrollY : 0;
   route.view(root, ctx);
   window.scrollTo(0, scroll);
@@ -48,8 +50,27 @@ export function render() {
   lastPath = path;
 }
 
+// Small cloud icon in the top bar showing sync state; tap for details.
+const BADGE = {
+  off: ['☁︎', 'Cloud sync is off', 'off'],
+  syncing: ['⟳', 'Syncing…', 'busy'],
+  synced: ['☁︎', 'Synced with Google Drive', 'ok'],
+  offline: ['☁︎', 'Offline, will sync later', 'warn'],
+  'needs-auth': ['☁︎', 'Sign in to Google again', 'warn'],
+  error: ['☁︎', 'Sync problem', 'warn'],
+};
+function renderSyncBadge() {
+  const st = getStatus();
+  const [icon, label, tone] = BADGE[st.state] || BADGE.off;
+  document.getElementById('topbar-actions').innerHTML =
+    `<a href="#/sync" class="sync-badge ${tone}" aria-label="${label}" title="${label}">${icon}${tone === 'warn' || tone === 'off' ? '<i></i>' : ''}</a>`;
+}
+
+// Sync must read any Google sign-in result from the URL before the router does.
+initSync();
 window.addEventListener('hashchange', render);
 subscribe(render);
+onStatus(() => { renderSyncBadge(); if (currentPath() === '/sync') render(); });
 render();
 
 // Offline support + home screen install

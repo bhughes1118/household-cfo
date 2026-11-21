@@ -247,3 +247,13 @@ input.invalid { border-color: var(--neg); }
   transition: 0.2s; z-index: 50; white-space: nowrap;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---- Sync badge ---- */
+.sync-badge { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow); color: var(--muted); font-size: 1.1rem; }
+.sync-badge.ok { color: var(--pos); }
+.sync-badge.busy { color: var(--brand); animation: spin 1s linear infinite; }
+.sync-badge i { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.sync-badge.off i { background: var(--muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
+details summary { cursor: pointer; }
+code { font-size: 0.78rem; word-break: break-all; }

@@ -14,6 +14,9 @@ js/
   calc.js               Pure selectors: every number on screen is computed here
   ui.js                 Formatting, progress bars, toast, bottom-sheet form builder
   sample-data.js        Placeholder data for first launch
+  sync.js               Google Drive sync: OAuth redirect sign-in, find/create the data file, pull-merge-push loop
+  merge.js              Record-level merge of two copies of the state (per-record updatedAt, delete tombstones, resets)
+  config.js             Google OAuth client ID
   views/
     household.js        Dashboard, Bills, Spending, Income, Budget categories
     honeymoon.js        Portal overview, Itinerary, Bookings, Expenses, Trip details
@@ -22,7 +25,8 @@ js/
 
 ## Layers
 
-1. **Store** (`store.js`) owns the data. Views never touch localStorage; they call `upsert`, `remove`, `toggleBillPaid`, `updateTrip`. Every change saves and re-renders. A future cloud sync (e.g. Supabase or Firebase so both phones share data) only needs to change this file.
+1. **Store** (`store.js`) owns the data. Views never touch localStorage; they call `upsert`, `remove`, `toggleBillPaid`, `updateTrip`. Every change stamps `updatedAt`, saves locally and re-renders.
+1b. **Sync** (`sync.js` + `merge.js`) keeps the local copy and the Google Drive file in step: 1.5 s after a local edit, when the app returns to the foreground, every 60 s while open, and when the phone comes back online. Each pass downloads the Drive file, merges, uploads if anything changed, and applies the merged result locally. Deletes are kept as tombstones in `state.deleted`; "clear everything" and restores set `state.resetAt` so older copies don't bring data back. A phone that only has sample data never merges it into real shared data.
 2. **Calc** (`calc.js`) is pure functions: `monthSummary`, `spendByCategory`, `groupTotals`, `upcomingBills`, `tripSummary`, `itinerary`. Charts, reports and suggestions in phase 2 reuse these instead of re-deriving numbers.
 3. **Views** render HTML strings for one screen and bind events.
 
@@ -52,6 +56,5 @@ js/
 - Charts: monthly trend, category breakdown, honeymoon budget burn-down (feed from `calc.js`).
 - Reports: monthly PDF/CSV export.
 - Suggestions: flag categories trending over budget, bills to move off-cycle, savings rate targets.
-- Shared sync across both phones (swap the storage in `store.js`).
 - Recurring/automatic transactions and bank CSV import.
 - Currency conversion for spending abroad on the trip.

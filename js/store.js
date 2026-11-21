@@ -25,16 +25,28 @@ function load() {
 function migrate(s) {
   if (!s || typeof s !== 'object') return sampleState();
   s.schemaVersion ??= 1;
+  s.deleted ??= {};
+  s.resetAt ??= 0;
   return s;
 }
 
-function save() {
+// meta.fromSync is true when the change came from the shared Drive file,
+// so the sync layer doesn't echo it straight back.
+function save(meta = {}) {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch (e) {
     console.warn('Could not save', e);
   }
-  listeners.forEach((fn) => fn(state));
+  listeners.forEach((fn) => fn(state, meta));
+}
+
+const now = () => Date.now();
+
+// Used by the sync layer to apply the merged shared data.
+export function replaceState(next) {
+  state = migrate(next);
+  save({ fromSync: true });
 }
 
 export const getState = () => state;
@@ -49,6 +61,7 @@ export const uid = () =>
 export function upsert(collection, item) {
   const list = state[collection];
   if (!item.id) item.id = uid();
+  item.updatedAt = now();
   const i = list.findIndex((x) => x.id === item.id);
   if (i >= 0) list[i] = { ...list[i], ...item };
   else list.push(item);
@@ -58,16 +71,17 @@ export function upsert(collection, item) {
 
 export function remove(collection, id) {
   state[collection] = state[collection].filter((x) => x.id !== id);
+  state.deleted[id] = now();
   save();
 }
 
 export function updateSettings(patch) {
-  state.settings = { ...state.settings, ...patch };
+  state.settings = { ...state.settings, ...patch, updatedAt: now() };
   save();
 }
 
 export function updateTrip(patch) {
-  state.trip = { ...state.trip, ...patch };
+  state.trip = { ...state.trip, ...patch, updatedAt: now() };
   save();
 }
 
@@ -77,6 +91,7 @@ export function toggleBillPaid(billId, monthKey) {
   if (!bill) return;
   bill.paid = bill.paid || {};
   bill.paid[monthKey] = !bill.paid[monthKey];
+  bill.updatedAt = now();
   save();
 }
 
@@ -91,12 +106,29 @@ export function importJSON(text) {
   if (!parsed || !Array.isArray(parsed.transactions)) {
     throw new Error('That file does not look like a Household CFO backup.');
   }
-  state = migrate(parsed);
+  // A restore replaces the shared data too, so stamp it as a reset.
+  state = stampAll(migrate(parsed));
   save();
 }
 
+// Mark every record as just-edited and set resetAt, so a reset/restore wins
+// over older copies on other phones.
+function stampAll(s) {
+  const t = now();
+  for (const k of ['income', 'categories', 'bills', 'transactions', 'tripItems', 'tripExpenses']) {
+    for (const item of s[k]) item.updatedAt = t + 1;
+  }
+  s.settings.updatedAt = t + 1;
+  s.trip.updatedAt = t + 1;
+  s.settings.isSample = false;
+  s.resetAt = t;
+  s.deleted = {};
+  return s;
+}
+
 export function resetToSample() {
-  state = sampleState();
+  state = stampAll(sampleState());
+  state.settings.isSample = true; // never pushed over real shared data
   save();
 }
 
@@ -112,5 +144,6 @@ export function clearAll() {
     settings: { ...blank.settings, isSample: false },
     trip: { ...blank.trip, name: 'Our Honeymoon', destination: '', budget: 0 },
   };
+  stampAll(state);
   save();
 }

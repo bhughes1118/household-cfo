@@ -1,6 +1,6 @@
 // Offline support: cache the app shell, serve from cache, refresh in the background.
 // Bump VERSION whenever files change so phones pick up the new build.
-const VERSION = 'hcfo-v1';
+const VERSION = 'hcfo-v2';
 const SHELL = [
   './',
   'index.html',
@@ -11,6 +11,9 @@ const SHELL = [
   'js/calc.js',
   'js/ui.js',
   'js/sample-data.js',
+  'js/sync.js',
+  'js/merge.js',
+  'js/config.js',
   'js/views/household.js',
   'js/views/honeymoon.js',
   'js/views/more.js',

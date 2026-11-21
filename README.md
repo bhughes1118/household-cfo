@@ -28,7 +28,9 @@ A simple household finance app (income, bills, spending, budgets) with a **Honey
 
 ## Your data
 
-Everything is stored on the device in the browser (localStorage). Nothing is sent to a server, and this repo contains no personal financial data. Use **More → Backup & data** to download a backup or restore one on another device. The app starts with clearly marked sample data that you can clear there.
+Data is shared between phones through **Google Drive**: one file, `Household CFO/household-cfo-data.json`, in your Drive. Each device also keeps a local copy so the app opens instantly and works offline, and changes from both phones are merged. Setup takes about 10 minutes once: see [docs/GOOGLE_DRIVE_SETUP.md](docs/GOOGLE_DRIVE_SETUP.md).
+
+This repo contains no personal financial data. Use **More → Backup & data** to download a backup file. The app starts with clearly marked sample data that you can clear there.
 
 ## Running locally
 
