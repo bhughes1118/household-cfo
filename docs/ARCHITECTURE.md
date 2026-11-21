@@ -17,6 +17,7 @@ js/
   sync.js               Google Drive sync: OAuth redirect sign-in, find/create the data file, pull-merge-push loop
   merge.js              Record-level merge of two copies of the state (per-record updatedAt, delete tombstones, resets)
   config.js             Google OAuth client ID
+  importer.js           CSV import (bank exports or spreadsheet logs) -> spending, auto-categorised via category `match` words
   views/
     household.js        Dashboard, Bills, Spending, Income, Budget categories
     honeymoon.js        Portal overview, Itinerary, Bookings, Expenses, Trip details
@@ -34,8 +35,8 @@ js/
 
 | Collection | Fields |
 |---|---|
-| `income` | name, amount, cadence (monthly, biweekly, weekly, yearly) |
-| `categories` | name, icon, group (needs, wants, savings), budget. `honeymoon` is a system category. |
+| `income` | name, amount (take-home per paycheck), gross (optional), cadence (monthly, semimonthly, biweekly, weekly, yearly) |
+| `categories` | name, icon, group (needs, wants, savings, debt), kind (fixed, flexible), budget, match (import keywords). `honeymoon` is a system category. |
 | `bills` | name, amount, dueDay, categoryId, autopay, paid `{ 'YYYY-MM': true }` |
 | `transactions` | date, amount, categoryId, note |
 | `trip` | name, destination, startDate, endDate, budget, travelers |
@@ -51,10 +52,14 @@ js/
 - Spent = transactions + bills marked paid + honeymoon spend for the month.
 - Left this month = income − spent − bills not yet paid.
 
+## Access
+
+The app shows a lock screen until the device signs in with Google (project `household-cfo-515413`, Workspace ellehaushomes.com, audience Internal). Signing out revokes the token and deletes the local copy.
+
 ## Phase 2 ideas (structure is ready for these)
 
 - Charts: monthly trend, category breakdown, honeymoon budget burn-down (feed from `calc.js`).
 - Reports: monthly PDF/CSV export.
 - Suggestions: flag categories trending over budget, bills to move off-cycle, savings rate targets.
-- Recurring/automatic transactions and bank CSV import.
+- Read-only bank connection (SimpleFIN Bridge or Plaid) through a small server such as a Cloudflare Worker, since aggregator keys can't live in a static site.
 - Currency conversion for spending abroad on the trip.

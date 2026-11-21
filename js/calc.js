@@ -15,12 +15,31 @@ const sum = (arr, f = (x) => x) => arr.reduce((t, x) => t + (Number(f(x)) || 0),
 
 // ---- Household -------------------------------------------------------------
 
-export const CADENCE_TO_MONTHLY = { monthly: 1, biweekly: 26 / 12, weekly: 52 / 12, yearly: 1 / 12 };
+export const CADENCE_TO_MONTHLY = { monthly: 1, semimonthly: 2, biweekly: 26 / 12, weekly: 52 / 12, yearly: 1 / 12 };
+export const CHECKS_PER_MONTH = { semimonthly: 2, biweekly: 26 / 12, weekly: 52 / 12 };
 
 export const monthlyIncome = (s) =>
   sum(s.income, (i) => i.amount * (CADENCE_TO_MONTHLY[i.cadence] ?? 1));
 
+export const monthlyGross = (s) =>
+  sum(s.income, (i) => (i.gross || i.amount) * (CADENCE_TO_MONTHLY[i.cadence] ?? 1));
+
 export const billsTotal = (s) => sum(s.bills, (b) => b.amount);
+
+// Paycheck plan (like "bills per check"): bills due 1st–15th come out of the
+// first check, 16th–end out of the second. Only for twice-a-month or biweekly pay.
+export function paycheckPlan(s) {
+  const paid = s.income.filter((i) => CHECKS_PER_MONTH[i.cadence]);
+  if (!paid.length) return null;
+  const perCheck = sum(paid, (i) => i.amount * CHECKS_PER_MONTH[i.cadence]) / 2;
+  const first = s.bills.filter((b) => b.dueDay <= 15);
+  const second = s.bills.filter((b) => b.dueDay > 15);
+  const mk = (label, bills) => {
+    const total = sum(bills, (b) => b.amount);
+    return { label, income: perCheck, bills: total, left: perCheck - total, items: bills };
+  };
+  return [mk('1st check (bills due 1st–15th)', first), mk('2nd check (bills due 16th–end)', second)];
+}
 
 export const billsPaid = (s, mk) => s.bills.filter((b) => b.paid?.[mk]);
 
@@ -50,7 +69,14 @@ export function monthSummary(s, mk) {
   const paidBills = sum(billsPaid(s, mk), (b) => b.amount);
   const unpaidBills = billsDue - paidBills;
   const budgeted = sum(s.categories, (c) => c.budget);
+  const kindOf = Object.fromEntries(s.categories.map((c) => [c.id, c.kind || 'flexible']));
+  const fixedSpent = sum(Object.entries(byCat).filter(([id]) => kindOf[id] === 'fixed'), ([, v]) => v);
   return {
+    gross: monthlyGross(s),
+    afterFixed: income - billsDue,
+    fixedSpent,
+    flexibleSpent: spent - fixedSpent,
+    share: Object.fromEntries(Object.entries(byCat).map(([id, v]) => [id, spent ? v / spent : 0])),
     income,
     spent,
     billsDue,
@@ -66,7 +92,7 @@ export function monthSummary(s, mk) {
 
 export function groupTotals(s, mk) {
   const byCat = spendByCategory(s, mk);
-  const g = { needs: 0, wants: 0, savings: 0 };
+  const g = { needs: 0, wants: 0, savings: 0, debt: 0 };
   for (const c of s.categories) g[c.group] = (g[c.group] || 0) + (byCat[c.id] || 0);
   return g;
 }
@@ -78,6 +104,16 @@ export function upcomingBills(s, mk, today = new Date()) {
     .filter((b) => !b.paid?.[mk])
     .map((b) => ({ ...b, overdue: isThisMonth && b.dueDay < day }))
     .sort((a, b) => a.dueDay - b.dueDay);
+}
+
+// Map an imported category / description to one of ours (spreadsheet or bank CSV).
+export function matchCategory(s, text) {
+  const t = String(text || '').toLowerCase().trim();
+  if (!t) return null;
+  const direct = s.categories.find((c) => c.id === t || c.name.toLowerCase() === t);
+  if (direct) return direct.id;
+  for (const c of s.categories) for (const m of c.match || []) if (t.includes(m)) return c.id;
+  return null;
 }
 
 // ---- Honeymoon -------------------------------------------------------------

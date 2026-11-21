@@ -2,7 +2,7 @@
 
 import { getState, upsert, remove, toggleBillPaid } from '../store.js';
 import {
-  monthSummary, groupTotals, upcomingBills, honeymoonSpendInMonth, tripSummary,
+  monthSummary, groupTotals, upcomingBills, honeymoonSpendInMonth, tripSummary, paycheckPlan,
   daysUntil, monthKey, inMonth, isoLocal, CADENCE_TO_MONTHLY,
 } from '../calc.js';
 import { esc, money, pct, bar, shortDate, monthLabel, shiftMonth, openForm, toast, empty, ordinal } from '../ui.js';
@@ -91,6 +91,8 @@ export function dashboard(root, ctx) {
       <div class="big ${m.leftToSpend < 0 ? 'neg' : ''}">${money(m.leftToSpend)}</div>
       <div class="muted">after spending so far and ${money(m.unpaidBills)} in bills still due</div>
       ${bar(m.spent + m.unpaidBills, m.income)}
+      <div class="row-line small"><span class="muted">After fixed bills each month</span><strong>${money(m.afterFixed)}</strong></div>
+      <div class="row-line small"><span class="muted">Fixed spent · Flexible spent</span><span>${money(m.fixedSpent)} · ${money(m.flexibleSpent)}</span></div>
     </section>
 
     <section class="kpis">
@@ -102,12 +104,12 @@ export function dashboard(root, ctx) {
 
     <section class="card">
       <div class="card-head"><h3>Needs · Wants · Savings</h3><span class="muted small">50 / 30 / 20 guide</span></div>
-      ${['needs', 'wants', 'savings'].map((k) => `
+      ${['needs', 'wants', 'savings', ...(g.debt ? ['debt'] : [])].map((k) => `
         <div class="row-line">
           <span class="cap">${k}</span>
-          <span>${money(g[k])} <span class="muted small">of ${money(m.income * guide[k])}</span></span>
+          <span>${money(g[k])}${guide[k] ? ` <span class="muted small">of ${money(m.income * guide[k])}</span>` : ''}</span>
         </div>
-        ${bar(g[k], m.income * guide[k], k === 'savings' ? { tone: 'ok' } : {})}`).join('')}
+        ${guide[k] ? bar(g[k], m.income * guide[k], k === 'savings' ? { tone: 'ok' } : {}) : ''}`).join('')}
     </section>
 
     <a class="card trip-card" href="#/honeymoon">
@@ -130,7 +132,7 @@ export function dashboard(root, ctx) {
       <div class="card-head"><h3>Budget by category</h3><a href="#/budgets" class="small">Edit ›</a></div>
       <ul class="list">${cats.map((c) => `
         <li class="cat">
-          <div class="row-line"><span>${c.icon} ${esc(c.name)}</span><span>${money(c.spent)}${c.budget ? ` <span class="muted small">/ ${money(c.budget)}</span>` : ''}</span></div>
+          <div class="row-line"><span>${c.icon} ${esc(c.name)}${c.spent ? ` <span class="muted small">${pct(m.share[c.id])}</span>` : ''}</span><span>${money(c.spent)}${c.budget ? ` <span class="muted small">/ ${money(c.budget)}</span>` : ''}</span></div>
           ${c.budget ? bar(c.spent, c.budget, c.group === 'savings' ? { tone: 'ok' } : {}) : ''}
         </li>`).join('')}</ul>
     </section>
@@ -223,6 +225,17 @@ export function bills(root, ctx) {
       }).join('')}</ul>` : empty('No bills yet.')}
       <button class="btn block" data-act="add-bill">＋ Add a bill</button>
     </section>
+    ${(() => {
+      const plan = paycheckPlan(s);
+      if (!plan) return '';
+      return `<section class="card">
+        <div class="card-head"><h3>Bills per paycheck</h3><a href="#/income" class="small">Income ›</a></div>
+        ${plan.map((p) => `
+          <div class="row-line"><span>${p.label}</span></div>
+          <div class="row-line small"><span class="muted">Paycheck ${money(p.income)} − bills ${money(p.bills)}</span><strong class="${p.left < 0 ? 'neg' : 'pos'}">${money(p.left)} left</strong></div>
+          ${bar(p.bills, p.income)}`).join('')}
+      </section>`;
+    })()}
   `;
   bindMonthPicker(root, ctx, () => bills(root, ctx));
   root.querySelectorAll('[data-toggle]').forEach((b) => (b.onclick = () => toggleBillPaid(b.dataset.toggle, mk)));
@@ -271,6 +284,7 @@ export function spending(root, ctx) {
 
 const CADENCES = [
   { value: 'monthly', label: 'Monthly' },
+  { value: 'semimonthly', label: 'Twice a month (e.g. 1st & 15th)' },
   { value: 'biweekly', label: 'Every 2 weeks' },
   { value: 'weekly', label: 'Weekly' },
   { value: 'yearly', label: 'Yearly' },
@@ -281,7 +295,8 @@ function editIncome(i = {}) {
     title: i.id ? 'Edit income' : 'Add income',
     fields: [
       { name: 'name', label: 'Source', value: i.name, required: true, autofocus: !i.id, placeholder: 'e.g. Paycheck' },
-      { name: 'amount', label: 'Take-home amount', type: 'money', value: i.amount, required: true },
+      { name: 'amount', label: 'Take-home per paycheck (after tax & 401k)', type: 'money', value: i.amount, required: true },
+      { name: 'gross', label: 'Gross per paycheck (optional)', type: 'money', value: i.gross },
       { name: 'cadence', label: 'How often', type: 'select', value: i.cadence || 'monthly', options: CADENCES },
     ],
     onSubmit: (v) => { upsert('income', { ...i, ...v }); toast('Saved'); },
@@ -292,16 +307,18 @@ function editIncome(i = {}) {
 export function income(root) {
   const s = getState();
   const total = s.income.reduce((t, i) => t + i.amount * (CADENCE_TO_MONTHLY[i.cadence] ?? 1), 0);
+  const gross = s.income.reduce((t, i) => t + (i.gross || i.amount) * (CADENCE_TO_MONTHLY[i.cadence] ?? 1), 0);
   root.innerHTML = `
     <section class="hero card">
       <div class="label">Monthly take-home</div>
       <div class="big">${money(total)}</div>
       <div class="muted">${money(total * 12)} a year</div>
+      ${gross > total ? `<div class="row-line small"><span class="muted">Gross ${money(gross)}/mo (${money(gross * 12)}/yr)</span><span class="muted">Taxes & deductions ${money(gross - total)}/mo</span></div>` : ''}
     </section>
     <section class="card">
       ${s.income.length ? `<ul class="list">${s.income.map((i) => `
         <li class="item tap" data-inc="${i.id}">
-          <div class="grow"><div>${esc(i.name)}</div><div class="muted small">${CADENCES.find((c) => c.value === i.cadence)?.label || 'Monthly'}</div></div>
+          <div class="grow"><div>${esc(i.name)}</div><div class="muted small">${CADENCES.find((c) => c.value === i.cadence)?.label || 'Monthly'}${i.gross ? ` · ${money(i.gross)} gross` : ''}</div></div>
           <div class="right"><strong>${money(i.amount)}</strong>${i.cadence !== 'monthly' ? `<div class="muted small">${money(i.amount * (CADENCE_TO_MONTHLY[i.cadence] ?? 1))}/mo</div>` : ''}</div>
         </li>`).join('')}</ul>` : empty('Add your paychecks and other income.')}
       <button class="btn block" data-act="add">＋ Add income</button>
@@ -316,6 +333,7 @@ const GROUPS = [
   { value: 'needs', label: 'Needs' },
   { value: 'wants', label: 'Wants' },
   { value: 'savings', label: 'Savings' },
+  { value: 'debt', label: 'Debt' },
 ];
 
 function editCategory(c = {}) {
@@ -326,6 +344,7 @@ function editCategory(c = {}) {
       { name: 'name', label: 'Name', value: c.name, required: true, autofocus: !c.id },
       { name: 'budget', label: 'Monthly budget', type: 'money', value: c.budget },
       { name: 'group', label: 'Group', type: 'select', value: c.group || 'wants', options: GROUPS },
+      { name: 'kind', label: 'Type', type: 'select', value: c.kind || 'flexible', options: [{ value: 'fixed', label: 'Fixed (same every month)' }, { value: 'flexible', label: 'Flexible (day to day)' }] },
     ],
     onSubmit: (v) => { upsert('categories', { ...c, ...v }); toast('Saved'); },
     onDelete: c.id && !c.system ? () => remove('categories', c.id) : null,

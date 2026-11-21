@@ -3,7 +3,7 @@
 // read with getState() and change data with the actions below, so swapping in
 // a cloud backend later only touches this file.
 
-import { sampleState } from './sample-data.js';
+import { sampleState, DEFAULT_CATEGORIES } from './sample-data.js';
 
 const KEY = 'hcfo:state';
 export const SCHEMA_VERSION = 1;
@@ -27,6 +27,12 @@ function migrate(s) {
   s.schemaVersion ??= 1;
   s.deleted ??= {};
   s.resetAt ??= 0;
+  // New default categories appear for existing users too (unless they deleted them).
+  for (const c of DEFAULT_CATEGORIES) {
+    const have = s.categories.find((x) => x.id === c.id);
+    if (!have && !s.deleted[c.id]) s.categories.push({ ...c, updatedAt: 0 });
+    else if (have) { have.kind ??= c.kind; have.match ??= c.match; }
+  }
   return s;
 }
 
@@ -124,6 +130,21 @@ function stampAll(s) {
   s.resetAt = t;
   s.deleted = {};
   return s;
+}
+
+// Add many transactions at once (CSV import). Returns how many were added.
+export function addTransactions(list) {
+  const t = now();
+  const seen = new Set(state.transactions.map((x) => `${x.date}|${Number(x.amount).toFixed(2)}|${(x.note || '').toLowerCase()}`));
+  let added = 0;
+  for (const x of list) {
+    const key = `${x.date}|${Number(x.amount).toFixed(2)}|${(x.note || '').toLowerCase()}`;
+    if (seen.has(key)) continue; // already in the log (re-import); repeats inside one file are kept
+    state.transactions.push({ ...x, id: uid(), updatedAt: t, imported: true });
+    added++;
+  }
+  if (added) save();
+  return added;
 }
 
 export function resetToSample() {

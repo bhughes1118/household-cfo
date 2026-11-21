@@ -9,6 +9,31 @@ const d = (offsetDays) => {
   return isoLocal(t);
 };
 
+// Default budget categories. group drives Needs / Wants / Savings / Debt;
+// kind 'fixed' = same every month (bills), 'flexible' = day to day.
+// `match` lists words used to map imported bank/spreadsheet categories.
+export const DEFAULT_CATEGORIES = [
+  { id: 'housing', name: 'Housing', group: 'needs', kind: 'fixed', budget: 2600, icon: '🏠', match: ['rent', 'mortgage', 'hoa'] },
+  { id: 'utilities', name: 'Utilities', group: 'needs', kind: 'fixed', budget: 450, icon: '💡', match: ['power', 'electric', 'water', 'internet', 'phone', 'utility'] },
+  { id: 'insurance', name: 'Insurance', group: 'needs', kind: 'fixed', budget: 400, icon: '🛡️', match: ['insurance'] },
+  { id: 'debt', name: 'Loans', group: 'debt', kind: 'fixed', budget: 0, icon: '🎓', match: ['student loan', 'loan'] },
+  { id: 'cc', name: 'Credit card payment', group: 'debt', kind: 'fixed', budget: 0, icon: '💳', match: ['cc', 'credit card', 'discover', 'amex', 'visa'] },
+  { id: 'groceries', name: 'Groceries', group: 'needs', kind: 'flexible', budget: 900, icon: '🛒', match: ['grocer', 'publix', 'costco', 'food'] },
+  { id: 'transport', name: 'Gas & car', group: 'needs', kind: 'flexible', budget: 700, icon: '🚗', match: ['gas', 'fuel', 'car', 'auto', 'parking', 'toll'] },
+  { id: 'rideshare', name: 'Uber & rideshare', group: 'wants', kind: 'flexible', budget: 60, icon: '🚕', match: ['uber', 'lyft', 'rideshare', 'taxi'] },
+  { id: 'health', name: 'Health', group: 'needs', kind: 'flexible', budget: 250, icon: '🩺', match: ['health', 'doctor', 'pharmacy', 'gym', 'medical'] },
+  { id: 'dining', name: 'Bars & restaurants', group: 'wants', kind: 'flexible', budget: 500, icon: '🍽️', match: ['restaurant', 'bar', 'dining', 'coffee', 'ent'] },
+  { id: 'shopping', name: 'Shopping', group: 'wants', kind: 'flexible', budget: 400, icon: '🛍️', match: ['shopping', 'amazon', 'clothes'] },
+  { id: 'subscriptions', name: 'Subscriptions', group: 'wants', kind: 'fixed', budget: 120, icon: '📺', match: ['subscription', 'streaming', 'netflix', 'prime', 'xbox', 'spotify'] },
+  { id: 'fun', name: 'Entertainment', group: 'wants', kind: 'flexible', budget: 300, icon: '🎟️', match: ['entertainment', 'fun', 'tickets', 'movie'] },
+  { id: 'cash', name: 'Cash / ATM', group: 'wants', kind: 'flexible', budget: 0, icon: '💵', match: ['atm', 'cash'] },
+  { id: 'misc', name: 'Misc', group: 'wants', kind: 'flexible', budget: 100, icon: '📦', match: ['misc', 'other', 'home depot'] },
+  { id: 'wedding', name: 'Wedding', group: 'wants', kind: 'flexible', budget: 1500, icon: '💍', match: ['wedding'] },
+  { id: 'savings', name: 'Savings & 401k', group: 'savings', kind: 'fixed', budget: 1500, icon: '🏦', match: ['saving', '401k', 'invest', 'ira'] },
+  // Honeymoon spending rolls up here automatically from the portal.
+  { id: 'honeymoon', name: 'Honeymoon', group: 'wants', kind: 'flexible', budget: 0, icon: '✈️', system: true, match: ['honeymoon'] },
+];
+
 export function sampleState() {
   const state = {
     schemaVersion: 1,
@@ -20,28 +45,13 @@ export function sampleState() {
 
     // Monthly take-home income sources
     income: [
-      { id: 'inc1', name: 'Paycheck (Bryce)', amount: 6500, cadence: 'monthly' },
-      { id: 'inc2', name: 'Paycheck (Partner)', amount: 4200, cadence: 'monthly' },
+      { id: 'inc1', name: 'Paycheck (Bryce)', amount: 3250, gross: 4800, cadence: 'semimonthly' },
+      { id: 'inc2', name: 'Paycheck (Partner)', amount: 2100, gross: 2900, cadence: 'semimonthly' },
       { id: 'inc3', name: 'Side income', amount: 600, cadence: 'monthly' },
     ],
 
     // Budget categories. group drives the Needs / Wants / Savings split.
-    categories: [
-      { id: 'housing', name: 'Housing', group: 'needs', budget: 2600, icon: '🏠' },
-      { id: 'utilities', name: 'Utilities', group: 'needs', budget: 450, icon: '💡' },
-      { id: 'groceries', name: 'Groceries', group: 'needs', budget: 900, icon: '🛒' },
-      { id: 'transport', name: 'Transportation', group: 'needs', budget: 700, icon: '🚗' },
-      { id: 'insurance', name: 'Insurance', group: 'needs', budget: 400, icon: '🛡️' },
-      { id: 'health', name: 'Health', group: 'needs', budget: 250, icon: '🩺' },
-      { id: 'dining', name: 'Dining Out', group: 'wants', budget: 500, icon: '🍽️' },
-      { id: 'shopping', name: 'Shopping', group: 'wants', budget: 400, icon: '🛍️' },
-      { id: 'subscriptions', name: 'Subscriptions', group: 'wants', budget: 120, icon: '📺' },
-      { id: 'fun', name: 'Entertainment', group: 'wants', budget: 300, icon: '🎟️' },
-      { id: 'wedding', name: 'Wedding', group: 'wants', budget: 1500, icon: '💍' },
-      { id: 'savings', name: 'Savings & Investing', group: 'savings', budget: 1500, icon: '🏦' },
-      // Honeymoon spending rolls up here automatically from the portal.
-      { id: 'honeymoon', name: 'Honeymoon', group: 'wants', budget: 0, icon: '✈️', system: true },
-    ],
+    categories: DEFAULT_CATEGORIES.map((c) => ({ ...c })),
 
     // Recurring bills. paid is tracked per month: { '2026-11': true }
     bills: [

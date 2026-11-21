@@ -1,6 +1,7 @@
 // "More" tab: links to secondary screens, iPhone install help, and backup tools.
 
-import { getState, exportJSON, importJSON, resetToSample, clearAll } from '../store.js';
+import { getState, exportJSON, importJSON, resetToSample, clearAll, addTransactions } from '../store.js';
+import { parseCSV, rowsToTransactions } from '../importer.js';
 import { isoLocal } from '../calc.js';
 import { toast, esc } from '../ui.js';
 import { getStatus, connect, disconnect, syncNow, setClientId } from '../sync.js';
@@ -56,6 +57,13 @@ export function data(root) {
     </section>
 
     <section class="card">
+      <h3>Import spending (CSV)</h3>
+      <p class="muted">Download a CSV from your bank or credit card website, or save a spreadsheet as CSV with Date, Description, Category and Amount columns. Spending is added to the log and sorted into categories. Deposits and duplicates are skipped.</p>
+      <label class="btn block">Choose CSV file<input type="file" accept=".csv,text/csv" data-act="csv" hidden></label>
+      <p class="muted small" id="csv-result"></p>
+    </section>
+
+    <section class="card">
       <h3>Start fresh</h3>
       ${s.settings.isSample ? '<p class="muted">The app is showing sample numbers right now.</p>' : ''}
       <button class="btn block danger" data-act="clear">Clear everything and start blank</button>
@@ -80,6 +88,22 @@ export function data(root) {
     } catch (err) {
       toast(err.message || 'Could not read that file');
     }
+  };
+  root.querySelector('[data-act="csv"]').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const out = root.querySelector('#csv-result');
+    try {
+      const { items, skipped } = rowsToTransactions(getState(), parseCSV(await file.text()));
+      const added = addTransactions(items);
+      const dupes = items.length - added;
+      const msg = `Added ${added} transaction${added === 1 ? '' : 's'}` + (dupes ? `, ${dupes} already in the log` : '') + (skipped ? `, ${skipped} deposits skipped` : '') + '.';
+      toast(msg);
+      setTimeout(() => { const o = document.querySelector('#csv-result'); if (o) o.textContent = msg; }, 0);
+    } catch (err) {
+      out.textContent = err.message || 'Could not read that file.';
+    }
+    e.target.value = '';
   };
   const confirmTwice = (btn, fn, done) => {
     btn.onclick = () => {
