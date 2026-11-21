@@ -18,12 +18,12 @@ function load() {
   } catch (e) {
     console.warn('Could not read saved data, starting from sample data', e);
   }
-  return sampleState();
+  return migrate(sampleState());
 }
 
 // Future schema changes go here, one step per version.
 function migrate(s) {
-  if (!s || typeof s !== 'object') return sampleState();
+  if (!s || typeof s !== 'object') s = sampleState();
   s.schemaVersion ??= 1;
   s.deleted ??= {};
   s.resetAt ??= 0;

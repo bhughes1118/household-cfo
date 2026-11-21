@@ -4,6 +4,7 @@
 import { subscribe } from './store.js';
 import { initSync, onStatus, getStatus, isConnected, connect } from './sync.js';
 import { monthKey } from './calc.js';
+import { icon } from './icons.js';
 import * as household from './views/household.js';
 import * as honeymoon from './views/honeymoon.js';
 import * as more from './views/more.js';
@@ -44,12 +45,12 @@ function renderLock() {
   document.getElementById('topbar-actions').innerHTML = '';
   root.innerHTML = `
     <section class="lock">
-      <img src="icons/icon-192.png" alt="" width="84" height="84">
+      <img src="icons/icon-192.png" alt="" width="56" height="56">
       <h1>Household CFO</h1>
-      <p class="muted">Sign in with your Google account to open your budget and honeymoon plans.</p>
+      <p class="muted">Budget, bills and the Honeymoon Portal. Sign in to continue.</p>
       ${st.message ? `<p class="neg small">${st.message}</p>` : ''}
-      <button class="btn block google" data-act="signin">Sign in with Google</button>
-      <p class="muted small">Your data is stored in your own Google Drive.</p>
+      <button class="btn primary block" data-act="signin">${icon('lock', 16)} Sign in with Google</button>
+      <p class="muted small">Data is stored in your own Google Drive.</p>
     </section>`;
   root.querySelector('[data-act="signin"]').onclick = connect;
 }
@@ -72,19 +73,22 @@ export function render() {
 
 // Small cloud icon in the top bar showing sync state; tap for details.
 const BADGE = {
-  off: ['☁︎', 'Cloud sync is off', 'off'],
-  syncing: ['⟳', 'Syncing…', 'busy'],
-  synced: ['☁︎', 'Synced with Google Drive', 'ok'],
-  offline: ['☁︎', 'Offline, will sync later', 'warn'],
-  'needs-auth': ['☁︎', 'Sign in to Google again', 'warn'],
-  error: ['☁︎', 'Sync problem', 'warn'],
+  off: ['Sync off', 'Cloud sync is off', 'warn'],
+  syncing: ['Syncing', 'Syncing with Google Drive', 'busy'],
+  synced: ['Synced', 'Synced with Google Drive', 'ok'],
+  offline: ['Offline', 'Offline, will sync later', 'warn'],
+  'needs-auth': ['Sign in', 'Sign in to Google again', 'warn'],
+  error: ['Sync issue', 'Sync problem', 'warn'],
 };
 function renderSyncBadge() {
   const st = getStatus();
-  const [icon, label, tone] = BADGE[st.state] || BADGE.off;
+  const [text, label, tone] = BADGE[st.state] || BADGE.off;
   document.getElementById('topbar-actions').innerHTML =
-    `<a href="#/sync" class="sync-badge ${tone}" aria-label="${label}" title="${label}">${icon}${tone === 'warn' || tone === 'off' ? '<i></i>' : ''}</a>`;
+    `<a href="#/sync" class="sync-badge ${tone}" aria-label="${label}" title="${label}"><span class="sdot"></span>${text}</a>`;
 }
+
+// Tab bar icons are drawn from the shared SVG set.
+document.querySelectorAll('[data-ic]').forEach((el) => { el.innerHTML = icon(el.dataset.ic, 20); });
 
 // Sync must read any Google sign-in result from the URL before the router does.
 initSync();

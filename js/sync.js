@@ -200,6 +200,30 @@ async function upload(token, id, data) {
   });
 }
 
+// ---- Attachments (ticket screenshots) -------------------------------------------
+
+// Saves an image next to the data file in the "Household CFO" Drive folder.
+// Returns { id, link } or null when not signed in / offline.
+export async function uploadAttachment(blob, name) {
+  const token = readToken();
+  const fileId = ls.get(LS.fileId);
+  if (!token || !fileId || !navigator.onLine) return null;
+  const meta = await (await drive(token, `${API}/files/${fileId}?fields=parents`)).json();
+  const boundary = 'hcfo' + Math.random().toString(36).slice(2);
+  const head =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+    JSON.stringify({ name, parents: meta.parents || [], mimeType: blob.type || 'image/jpeg' }) +
+    `\r\n--${boundary}\r\nContent-Type: ${blob.type || 'image/jpeg'}\r\n\r\n`;
+  const body = new Blob([head, blob, `\r\n--${boundary}--`]);
+  const r = await drive(token, `${UPLOAD}/files?uploadType=multipart&fields=id,webViewLink`, {
+    method: 'POST',
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  const j = await r.json();
+  return { id: j.id, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view` };
+}
+
 // ---- Sync loop -----------------------------------------------------------------
 
 let running = null;

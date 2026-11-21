@@ -18,6 +18,10 @@ A simple household finance app (income, bills, spending, budgets) with a **Honey
 - **Itinerary**: day-by-day schedule built from your bookings.
 - **Bookings**: flights, stays, tours, tickets, dining, transport. Status (Idea, To book, Booked), confirmation numbers, estimated cost, amount paid.
 - **Expenses**: quick add during the trip. Type the amount, tap Food / Drinks / Tips / etc.
+- **Scan a ticket**: pick a screenshot or photo of a ticket or confirmation. The app reads the text on the phone (no AI, no upload for reading), fills in the date, time, route, price and confirmation number, matches it to a planned booking, and saves the screenshot to the Google Drive folder.
+- **Needs info flags**: bookings missing a date, time, place, cost or confirmation number are flagged.
+
+**Design:** modelled on finance tools (Mercury, Ramp, Stripe, QuickBooks): neutral surfaces, ledger tables, tabular figures, line icons, colour only where it means something.
 
 **How they connect:** every honeymoon payment (booking deposits by the date paid, plus on-trip expenses) rolls into the household **Honeymoon** category for that month, so it shows up in the monthly budget automatically.
 

@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Household CFO</title>
   <meta name="description" content="Household budget, bills and spending, with a Honeymoon Portal inside.">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#11161d" media="(prefers-color-scheme: dark)">
 
   <!-- iPhone home screen app -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,6 +17,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -30,11 +34,11 @@
   <main id="view" tabindex="-1"></main>
 
   <nav class="tabbar" aria-label="Main">
-    <a href="#/" data-tab="home"><span class="ti">◎</span><span>Home</span></a>
-    <a href="#/bills" data-tab="bills"><span class="ti">▤</span><span>Bills</span></a>
-    <a href="#/spending" data-tab="spending"><span class="ti">↧</span><span>Spending</span></a>
-    <a href="#/honeymoon" data-tab="honeymoon"><span class="ti">✈</span><span>Honeymoon</span></a>
-    <a href="#/more" data-tab="more"><span class="ti">⋯</span><span>More</span></a>
+    <a href="#/" data-tab="home"><span class="ti" data-ic="home"></span><span>Home</span></a>
+    <a href="#/bills" data-tab="bills"><span class="ti" data-ic="bills"></span><span>Bills</span></a>
+    <a href="#/spending" data-tab="spending"><span class="ti" data-ic="spending"></span><span>Spending</span></a>
+    <a href="#/honeymoon" data-tab="honeymoon"><span class="ti" data-ic="plane"></span><span>Honeymoon</span></a>
+    <a href="#/more" data-tab="more"><span class="ti" data-ic="more"></span><span>More</span></a>
   </nav>
 
   <dialog id="sheet" class="sheet"></dialog>

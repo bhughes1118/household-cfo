@@ -7,6 +7,7 @@ index.html              App shell: top bar, tab bar, <main id="view">, bottom-sh
 manifest.webmanifest    PWA manifest (name, icons, standalone display, shortcuts)
 sw.js                   Service worker: offline cache (bump VERSION on each release)
 icons/                  App icons incl. apple-touch-icon
+vendor/tesseract/       Tesseract.js 5.1.1 + English data, loaded only when scanning (Apache-2.0)
 css/app.css             All styles, light + dark mode, iPhone safe areas
 js/
   app.js                Hash router (#/bills, #/honeymoon/itinerary, ...) + SW registration
@@ -17,6 +18,9 @@ js/
   sync.js               Google Drive sync: OAuth redirect sign-in, find/create the data file, pull-merge-push loop
   merge.js              Record-level merge of two copies of the state (per-record updatedAt, delete tombstones, resets)
   config.js             Google OAuth client ID
+  icons.js              Inline SVG line icons + category colour dots
+  ticket-parser.js      Rule-based reader for ticket/confirmation text (dates, times, route, price, confirmation #)
+  scan.js               Screenshot scan: on-device OCR (vendored Tesseract.js), review form, match to a booking, save image to Drive
   importer.js           CSV import (bank exports or spreadsheet logs) -> spending, auto-categorised via category `match` words
   views/
     household.js        Dashboard, Bills, Spending, Income, Budget categories

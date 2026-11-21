@@ -119,29 +119,42 @@ export function matchCategory(s, text) {
 // ---- Honeymoon -------------------------------------------------------------
 
 export const TRIP_TYPES = {
-  flight: { label: 'Flight', icon: '✈️' },
-  lodging: { label: 'Stay', icon: '🏨' },
-  tour: { label: 'Tour', icon: '🧭' },
-  ticket: { label: 'Ticket', icon: '🎟️' },
-  dining: { label: 'Dining', icon: '🍽️' },
-  transport: { label: 'Transport', icon: '🚕' },
-  other: { label: 'Other', icon: '📌' },
+  flight: { label: 'Flight', icon: 'plane' },
+  lodging: { label: 'Stay', icon: 'bed' },
+  tour: { label: 'Tour', icon: 'compass' },
+  ticket: { label: 'Ticket', icon: 'ticket' },
+  dining: { label: 'Dining', icon: 'utensils' },
+  transport: { label: 'Train / transport', icon: 'train' },
+  other: { label: 'Other', icon: 'pin' },
 };
 
 export const TRIP_STATUS = {
   idea: { label: 'Idea' },
   'to-book': { label: 'To book' },
   booked: { label: 'Booked' },
+  planned: { label: 'Plan' }, // sightseeing etc. that needs no booking
 };
 
+// What a booking is still missing, so the portal can flag it.
+export function needsInfo(i) {
+  if (i.status === 'planned') return [];
+  const miss = [];
+  if (!i.date) miss.push('date');
+  if (!i.time && ['flight', 'transport', 'tour', 'dining'].includes(i.type)) miss.push('time');
+  if (!i.location) miss.push('location');
+  if (!(i.estCost > 0) && !(i.paid > 0)) miss.push(i.status === 'booked' ? 'cost' : 'cost estimate');
+  if (i.status === 'booked' && !i.confirmation) miss.push('confirmation #');
+  return miss;
+}
+
 export const EXPENSE_KINDS = [
-  { id: 'food', label: 'Food', icon: '🍽️' },
-  { id: 'drinks', label: 'Drinks', icon: '🍹' },
-  { id: 'activity', label: 'Activity', icon: '🏝️' },
-  { id: 'transport', label: 'Transport', icon: '🚕' },
-  { id: 'shopping', label: 'Shopping', icon: '🛍️' },
-  { id: 'tips', label: 'Tips', icon: '💵' },
-  { id: 'other', label: 'Other', icon: '📌' },
+  { id: 'food', label: 'Food', icon: 'utensils' },
+  { id: 'drinks', label: 'Drinks', icon: 'glass' },
+  { id: 'activity', label: 'Activity', icon: 'sun' },
+  { id: 'transport', label: 'Transport', icon: 'car' },
+  { id: 'shopping', label: 'Shopping', icon: 'bag' },
+  { id: 'tips', label: 'Tips', icon: 'cash' },
+  { id: 'other', label: 'Other', icon: 'pin' },
 ];
 
 export function tripSummary(s) {
@@ -163,7 +176,8 @@ export function tripSummary(s) {
     committed,
     balanceOwed,
     remainingBudget: budget - estimatedTotal,
-    toBook: items.filter((i) => i.status !== 'booked'),
+    toBook: items.filter((i) => i.status === 'to-book' || i.status === 'idea'),
+    needsInfo: items.filter((i) => needsInfo(i).length),
     booked: items.filter((i) => i.status === 'booked'),
     byType: Object.fromEntries(
       Object.keys(TRIP_TYPES).map((t) => [t, sum(items.filter((i) => i.type === t), (i) => Math.max(i.estCost || 0, i.paid || 0))]),
