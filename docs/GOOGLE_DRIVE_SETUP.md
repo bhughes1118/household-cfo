@@ -45,6 +45,9 @@ Send the Client ID to Claude to build it into the app (or paste it in the app un
 - Each phone keeps a copy, so the app works offline and syncs when back online.
   Edits from both phones are merged record by record; if you both edit the same item, the later edit wins.
 - Google sign-ins last an hour. When the app is reopened after that it re-signs in automatically (a quick flash).
-- The app asks for Google Drive access so it can find the folder your partner shared with you.
-  The code only reads and writes `household-cfo-data.json`, and your sign-in token never leaves your phone.
+- The app uses Google's narrowest Drive permission (`drive.file`): it can only see the files it created
+  itself, nothing else in your Drive. Your sign-in token never leaves your device.
+- Current setup: project "Household CFO" under the ellehaushomes.com Google Workspace, audience **Internal**
+  (only @ellehaushomes.com accounts can sign in, no "unverified app" warning). To add a partner with a Gmail
+  account later, switch Audience to External, add them as a test user, and share the folder with them.
 - Download a backup any time under **More → Backup & data**.

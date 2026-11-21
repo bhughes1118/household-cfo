@@ -15,7 +15,8 @@ import { GOOGLE_CLIENT_ID } from './config.js';
 
 const FILE_NAME = 'household-cfo-data.json';
 const FOLDER_NAME = 'Household CFO';
-const SCOPE = 'https://www.googleapis.com/auth/drive';
+// drive.file = the app can only see files it created itself, nothing else in your Drive.
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
