@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Household CFO</title>
+  <meta name="description" content="Household budget, bills and spending, with a Honeymoon Portal inside.">
+  <meta name="theme-color" content="#0f766e">
+
+  <!-- iPhone home screen app -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CFO">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand" aria-label="Household CFO home">
+      <img src="icons/icon-192.png" alt="" width="28" height="28">
+      <span id="topbar-title">Household CFO</span>
+    </a>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="#/" data-tab="home"><span class="ti">◎</span><span>Home</span></a>
+    <a href="#/bills" data-tab="bills"><span class="ti">▤</span><span>Bills</span></a>
+    <a href="#/spending" data-tab="spending"><span class="ti">↧</span><span>Spending</span></a>
+    <a href="#/honeymoon" data-tab="honeymoon"><span class="ti">✈</span><span>Honeymoon</span></a>
+    <a href="#/more" data-tab="more"><span class="ti">⋯</span><span>More</span></a>
+  </nav>
+
+  <dialog id="sheet" class="sheet"></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
