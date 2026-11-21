@@ -1,6 +1,6 @@
 // Offline support: cache the app shell, serve from cache, refresh in the background.
 // Bump VERSION whenever files change so phones pick up the new build.
-const VERSION = 'hcfo-v7';
+const VERSION = 'hcfo-v8';
 const SHELL = [
   './',
   'index.html',

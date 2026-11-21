@@ -91,7 +91,7 @@ export function data(root) {
     <section class="panel">
       <div class="panel-head"><h2>Reset</h2></div>
       <div class="panel-body">
-      ${s.settings.isSample ? '<p class="muted small">The app is showing sample numbers right now.</p>' : ''}
+      ${s.settings.isSample ? '<p class="muted small">The app is showing sample numbers right now. Clearing them keeps the honeymoon plan you entered.</p>' : ''}
       <div class="btn-row">
         <button class="btn danger" data-act="clear">Clear all data</button>
         <button class="btn ghost" data-act="sample">Load sample data</button>

@@ -155,15 +155,19 @@ export function resetToSample() {
 
 export function clearAll() {
   const blank = sampleState();
+  // Clearing sample numbers keeps any real trip plan entered on top of them.
+  const sampleIds = new Set([...blank.tripItems, ...blank.tripExpenses].map((x) => x.id));
+  const keep = state.settings.isSample;
+  const realTrip = keep && state.trip.destination !== blank.trip.destination;
   state = {
     ...blank,
     income: [],
     bills: [],
     transactions: [],
-    tripItems: [],
-    tripExpenses: [],
+    tripItems: keep ? state.tripItems.filter((x) => !sampleIds.has(x.id)) : [],
+    tripExpenses: keep ? state.tripExpenses.filter((x) => !sampleIds.has(x.id)) : [],
     settings: { ...blank.settings, isSample: false },
-    trip: { ...blank.trip, name: 'Our Honeymoon', destination: '', budget: 0 },
+    trip: realTrip ? { ...state.trip } : { ...blank.trip, name: 'Our Honeymoon', destination: '', budget: 0 },
   };
   stampAll(state);
   save();
